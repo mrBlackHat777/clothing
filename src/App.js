@@ -5,8 +5,8 @@ import {Switch,Route} from 'react-router-dom'
 import Homepage from './pages/Homepage/Homepage'
 import ShopPage from './pages/Shop/ShopPage'
 import  Header from './components/Header/Header'
-import  SignUpSignIn from './components/SignIn/SignIn'
-import {auth} from './firebase/firebase.utils'
+import  SignUpSignIn from './pages/SignUpSignIn/SignUpSignIn'
+import {auth,createUserProfilDocument} from './firebase/firebase.utils'
 const HatsPage=()=>(
   <div>
       <h1>aa</h1>
@@ -21,14 +21,33 @@ class App extends React.Component {
   }
   unsubscribeFromAuth=null
   componentDidMount(){
-    this.unsubscribeFromAuth= auth.onAuthStateChanged(user=>{
-      this.setState({currentUser:user})
-      console.log(user)
+    // open subscription (listener)
+    this.unsubscribeFromAuth= auth.onAuthStateChanged(async userAuth=>{
+      if(userAuth){ //check if signin
+        const userRef= await createUserProfilDocument(userAuth);
+        userRef.onSnapshot(snapShot=>{ //subscribe 
+         console.log(snapShot.data())
+          this.setState({
+            currentUser:{
+              id:snapShot.id,
+              ...snapShot.data()
+            }
+          },()=>{
+            console.log(this.state)
+          })
+          
+          
+        })
+      }
+      else{
+        this.setState({currentUser:userAuth})
+      }
     })
+   
   }
 
   componentWillUnmount(){
-    this.unsubscribeFromAuth();
+    this.unsubscribeFromAuth(); //close subscription
   }
   render(){
     return (
